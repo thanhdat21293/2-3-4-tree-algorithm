@@ -5,7 +5,7 @@
 	<style>
 		.content {
 			border: 1px solid #000;
-			height: 450px;
+			height: 550px;
 			overflow: auto
 		}
 		
@@ -15,37 +15,25 @@
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<script src="js/popper.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+	<script src="js/viz.js"></script>
+	<script src="js/btree.js"></script>
+	<script src="js/gui.js"></script>
 </head>
 <body>
-<br>
 <br>
 	<div id="app">
 		<div class="container">
 			<div class="row">
-				<div class="col-md-2"></div>
-				<div class="col-md-8">
+				<div class="col-md-1"></div>
+				<div class="col-md-10">
 					<div class="action col-md-12">
-						<div class="input-group">
-						  <input type="text" id="arr_start" class="form-control" placeholder="Ex: 3 1 5 4 2 9 10 8 7 6" value="3 1 5 4 2 9 10 8 7 6">
-						  <span class="input-group-btn">
-							<button class="btn btn-primary" type="button" id="btnstart">Bắt đầu</button>
-						  </span>
-						</div>
-						<br>
 						<div class="row">
-							<div class="col-md-3">
+							<div class="col-md-4">
 								<div class="input-group">
 								  <input type="number" id="number_add" class="form-control">
 								  <span class="input-group-btn">
-									<button class="btn btn-success" type="button" id="btnadd">Thêm</button>
-								  </span>
-								</div>
-							</div>
-							<div class="col-md-3">
-								<div class="input-group">
-								  <input type="number" id="number_delete" class="form-control">
-								  <span class="input-group-btn">
-									<button class="btn btn-danger" type="button" id="btndelete">Xóa</button>
+									<button class="btn btn-success" type="button" id="btnadd" onclick="ins(readInput())">Thêm</button>
+									<button class="btn btn-danger" type="button" id="btndelete" onclick="del(readInput())">Xóa</button>
 								  </span>
 								</div>
 							</div>
@@ -62,7 +50,7 @@
 					</div>
 					<br>
 					<div class="col-md-12">
-						<div class="content">
+						<div class="content" id="content">
 							
 						</div>
 					</div>
@@ -70,18 +58,91 @@
 			</div>
 		</div>
 	</div>
-
+	<script>
+		init({"keys":[]},2)
+	</script>
+<!--
 	<script>
 	jQuery(document).ready(function(){
 	
 		let start = 0
-		function tree(arr_start){
-			var svgW=800, svgH =600, vRad=12, tree={cx:350, cy:30, w:40, h:70};
+		function tree(){
+			var svgW=800, svgH =500, vRad=12, tree={cx:350, cy:30, w:40, h:70};
 			tree.vis={v:0, l:'?', p:{x:tree.cx, y:tree.cy},c:[]};	
 			tree.size=1;
 			tree.glabels =[];
 			tree.incMatx =[];
 			tree.incX=500, tree.incY=30, tree.incS=20;
+			
+			let results = {}, count=1;
+			
+			tree.add = function(number) {
+				
+				let count_obj = Object.keys(results).length
+				if(count_obj > 0) {
+					tree.checkAdd(results, number);
+				}else {
+					results = {
+						value: [number],
+						id: 1,
+						order: count,
+						children: []
+					}
+					count++;
+				}
+				
+				console.log(results);
+				
+				d3.select("#g_lines").selectAll('line').data(tree.getEdges()).enter().append('line')
+					.attr('x1',function(d){ return d.p1.x;}).attr('y1',function(d){ return d.p1.y;})
+					.attr('x2',function(d){ return d.p2.x;}).attr('y2',function(d){ return d.p2.y;});
+
+				d3.select("#g_circles").selectAll('circle').data(tree.getVertices()).enter()
+					.append('circle').attr('cx',function(d){ return d.p.x;}).attr('cy',function(d){ return d.p.y;}).attr('r',vRad)
+					.on('click',function(d){return tree.addLeaf(d.v);});
+					
+				d3.select("#g_labels").selectAll('text').data(tree.getVertices()).enter().append('text')
+					.attr('x',function(d){ return d.p.x;}).attr('y',function(d){ return d.p.y+5;}).text(function(d){return d.l;})
+					.on('click',function(d){return tree.addLeaf(d.v);});
+				
+				
+			}
+			
+			tree.sx = function(array){
+				array.sort(function(a,b){
+					return a - b
+				})
+			}
+			
+			tree.checkAdd = function(results1, number) {
+				if(results1.children.length === 0){
+					if(results1.value.length < 3) {
+						results1.value.push(number)
+						tree.sx(results1.value);
+					}else {
+						tree.tach(results1);
+					}
+				}else{
+					tree.checkAdd(results1,number)
+				}
+			}
+			
+			tree.tach = function(results1) {
+				if(results1.value.length == 3) {
+					let number1 = results1.value[0];
+					let number2 = results1.value[1];
+					let number3 = results1.value[2];
+					results1 = {}
+				}else {
+					if(results1.children.length > 0) {
+						results1.children.map(item => {
+							tree.tach(item)
+						})
+					}
+				}
+				return true;
+				console.log(results1)
+			}
 			
 			tree.getVertices =  function(){
 				var v =[];
@@ -222,15 +283,15 @@
 			initialize = function(){
 				
 				d3.select(".content").append("svg").attr("width", svgW).attr("height", svgH).attr('id','treesvg');
-				
+				/*
 				let results = {}
 				
-				arr_start = arr_start.trim()
-				let n_arr = arr_start.length
+				arr_start = arr_start.trim() // Cắt bỏ khoảng trắng 2 đầu chuỗi nhập vào
+				let n_arr = arr_start.length // Đếm ký tự trong chuỗi nhập vào, trừ khoảng trắng
 				if(n_arr > 0){
-					arr_start = arr_start.split(' ')
+					arr_start = arr_start.split(' ') // convert từ chuỗi nhập vào thành mảng
 					arr_start.map(item => {
-						let n = Object.keys(results).length
+						let n = Object.keys(results).length //kiểm tra xem kết quả có thằng nào không
 						if(n > 0){
 							
 						}else{
@@ -242,7 +303,7 @@
 					alert('Đầu vào không được trống.')
 				}
 				console.log(results)
-				
+				*/
 				/*	
 				
 				
@@ -274,6 +335,13 @@
 						}
 					]
 				}
+				*/
+				d3.select("#treesvg").append('g').attr('id','g_lines')
+
+				d3.select("#treesvg").append('g').attr('id','g_circles')
+					
+				d3.select("#treesvg").append('g').attr('id','g_labels')
+				/*
 				d3.select("#treesvg").append('g').attr('id','g_lines').selectAll('line').data(tree.getEdges()).enter().append('line')
 					.attr('x1',function(d){ return d.p1.x;}).attr('y1',function(d){ return d.p1.y;})
 					.attr('x2',function(d){ return d.p2.x;}).attr('y2',function(d){ return d.p2.y;});
@@ -285,25 +353,22 @@
 				d3.select("#treesvg").append('g').attr('id','g_labels').selectAll('text').data(tree.getVertices()).enter().append('text')
 					.attr('x',function(d){ return d.p.x;}).attr('y',function(d){ return d.p.y+5;}).text(function(d){return d.l;})
 					.on('click',function(d){return tree.addLeaf(d.v);});
-				
 				*/
 				
-				tree.addLeaf(0);
-				tree.addLeaf(0);
+				
 			}
 			initialize();
 
 			return tree;
 		}
-		jQuery('#btnstart').click(function(){
-			let arr_start = jQuery('#arr_start').val();
-			if(start !== 1)
-				tree(arr_start);
-				
-			start = 1
+		let treeA = tree();
+		jQuery('#btnadd').click(function(){
+			let number = parseInt(jQuery('#number_add').val());
+			treeA.add(number)
 		})
 		
 	})
 </script>
+-->
 </body>
 </html>
