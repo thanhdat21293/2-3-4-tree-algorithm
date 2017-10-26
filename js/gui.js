@@ -3,8 +3,7 @@ function isNumber(n) {
 }
 
 function readInput() {
-	let number = document.getElementById('number_add').value;
-	console.log(number, typeof(number))
+	let number = parseFloat(document.getElementById('number_add').value);
 	if(typeof(number) == 'number' && isNumber(number))
 		return parseFloat(document.getElementById('number_add').value);
 	else {
@@ -13,9 +12,8 @@ function readInput() {
 	}
 }
 
-function init(id, mid) {
-    var insrc = id;
-    initTree(insrc, parseInt(mid, 10));
+function init() {
+    initTree({"keys":[]}, 2);
     draw();
 }
 
@@ -41,4 +39,8 @@ function ins(key) {
 		window.bt.root.insert(key);
 		draw();
 	}
+}
+
+function reset() {
+	init()
 }

@@ -20,7 +20,6 @@ BN.prototype.fromJSON = function(bt, json) {
             return BN.prototype.fromJSON(bt, child);
         }
     ));
-
 };
 
 BN.prototype.toJSON = function() {
@@ -37,15 +36,6 @@ BN.prototype.toJSON = function() {
     return ("{\"keys\":" + JSON.stringify(this.keys) + ",\"children\":" + cldsb.toString() + "}").replace(",\"children\":[]","");
 };
 
-BN.prototype.traverse = function() {
-    var acc = [];
-    for (var i=0; i<this.numberKeys(); i++) {
-        if (this.children[i]) acc = acc.concat(this.children[i].traverse());
-        acc.push(this.keys[i]);
-    }
-    if (this.children[i]) acc = acc.concat(this.children[i].traverse());
-    return acc;
-};
 
 BN.prototype.findLargest = function() {
     if (this.isLeaf()) {
@@ -67,7 +57,6 @@ BN.prototype.toGraphViz = function() {
     var writer = new Writer();
 
     this.walk(new Counter(), writer);
-
     return    "digraph g {\n" +
         "node [shape = record,height=.1];\n" +
         writer.buf + "\n" +
@@ -78,20 +67,17 @@ BN.prototype.walk = function(counter, writer) {
     var nodeid = "node" + String(counter.add()) ;
     writer.write(nodeid + "[label = \"");
     for (var i=0; i<this.numberKeys(); i++) {
-        writer.write("<f" + String(i) + "> |");
-        writer.write(String(this.keys[i]));
-        writer.write("|");
+        writer.write("<f" + String(i) + ">");
+        writer.write(String(this.keys[i]) + "|");
     }
     writer.writeln("<f" + String(i) + ">\"];");
 
     var childNum = -1;
-    var outer = this;
     this.children.forEach(function(child) {
         childNum++;
         var childnodeid = child.walk(counter, writer);
         writer.writeln("\"" + nodeid + "\":f" + String(childNum) + " -> \"" + childnodeid + "\"");
     });
-
     return nodeid;
 };
 
